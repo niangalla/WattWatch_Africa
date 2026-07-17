@@ -1,0 +1,12 @@
+# Dépendances installées dans l'image Airflow (voir Dockerfile).
+# Distinct de requirements.txt (env de dev local) : ici s'ajoutent les providers
+# Airflow et dbt, qui n'ont pas leur place dans le venv de dev.
+scrapy>=2.13
+pdfplumber>=0.11
+boto3>=1.34
+python-dotenv>=1.0
+
+apache-airflow-providers-amazon
+apache-airflow-providers-snowflake
+
+dbt-snowflake>=1.9

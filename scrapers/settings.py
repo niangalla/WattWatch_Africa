@@ -48,6 +48,11 @@ if _s3_bucket:
 else:
     FILES_STORE = "data/landing/crse/"
 
+# MinIO local (docker-compose) : même API que S3, seul l'endpoint change
+_endpoint = os.getenv("AWS_ENDPOINT_URL")
+if _endpoint:
+    AWS_ENDPOINT_URL = _endpoint
+
 FEED_EXPORT_ENCODING = "utf-8"
 
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"

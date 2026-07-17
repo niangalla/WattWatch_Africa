@@ -36,11 +36,9 @@ with DAG(
 
     parse_pdfs = BashOperator(
         task_id="parse_grilles_pdf",
-        bash_command=(
-            "cd /opt/wattwatch && "
-            "for f in data/landing/crse/full/*.pdf; do "
-            'python -m scrapers.pdf_parser "$f" -o data/processed/; done'
-        ),
+        # Lit la landing zone (S3/MinIO si WATTWATCH_S3_BUCKET est défini, sinon
+        # data/landing/) et publie les CSV tidy dans processed/
+        bash_command="cd /opt/wattwatch && python -m scrapers.process_landing",
     )
 
     scrape_crse >> parse_pdfs

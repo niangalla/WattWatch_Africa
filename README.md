@@ -6,22 +6,13 @@ Pipeline data engineering complet qui collecte les grilles tarifaires électriqu
 (et à terme d'autres pays africains), les normalise, calcule des indicateurs d'affordabilité
 et permet des comparaisons régionales.
 
-Projet inspiré de l'African Digital Affordability Observatory (ADAO), transposé du domaine
-télécoms vers l'électricité.
 
 ## Architecture
 
 Flux ELT en 4 étapes + 5 undercurrents transverses (modèle *Fundamentals of Data Engineering*,
 Reis & Housley) :
 
-```
-Sources → Ingestion → Stockage → Serving
-   │          │           │          │
- CRSE      Scrapy      S3 (landing)  Power BI
- SENELEC   pdfplumber  Snowflake
- ANSD                  dbt (Bronze → Silver → Gold)
- World Bank
-```
+![Architecture_Watt_Watch_Africa](docs/Architecture_WattWatch_Africa_V0.png)
 
 - **Ingestion** : Scrapy (API REST WordPress de crse.sn, pages HTML) + pdfplumber (grilles tarifaires PDF)
 - **Landing zone** : AWS S3, dépôt brut des fichiers scrapés
@@ -62,6 +53,38 @@ pytest
 Pour pousser la landing zone vers S3, définir dans `.env` (voir `.env.example`) :
 `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `WATTWATCH_S3_BUCKET` — le spider écrit alors
 directement `FILES_STORE=s3://…`.
+
+## Tester le pipeline complet avec Docker
+
+La stack locale dockerise tout ce qui peut l'être : **Airflow** (webserver + scheduler +
+Postgres, LocalExecutor) et **MinIO** qui émule la landing zone S3. Snowflake et Power BI
+restent des services externes.
+
+```bash
+docker compose up -d --build
+```
+
+| Service | URL | Identifiants |
+|---|---|---|
+| Airflow UI | http://localhost:8080 | admin / admin |
+| Console MinIO | http://localhost:9001 | minioadmin / minioadmin |
+
+Le repo est monté sur `/opt/wattwatch` dans les conteneurs : toute modification de code ou
+de DAG est prise en compte sans rebuild. Dans ce mode, le spider écrit ses PDF dans
+`s3://wattwatch/landing/crse/` (MinIO) et `scrapers/process_landing.py` les parse vers
+`s3://wattwatch/processed/` — exactement le contrat qu'aura le vrai S3.
+
+Tester un DAG sans attendre le scheduler :
+
+```bash
+docker compose exec airflow-scheduler airflow dags test wattwatch_ingestion 2026-07-17
+```
+
+Les DAGs `wattwatch_load` (COPY INTO) et `wattwatch_dbt` s'activent en renseignant
+`AIRFLOW_CONN_SNOWFLAKE_WATTWATCH` dans `.env` (compte d'essai Snowflake suffisant).
+Note : Snowflake ne peut pas lire un MinIO local — pour le `COPY INTO`, pointer
+`WATTWATCH_S3_BUCKET` vers un vrai bucket S3 (il suffit de changer les variables
+d'environnement, aucun changement de code).
 
 ## Structure
 
