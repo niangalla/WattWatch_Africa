@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: bronze
+    database: WATTWATCH
+    schema: BRONZE
+    description: Tables brutes chargées depuis la landing zone S3 (COPY INTO, DAG wattwatch_load)
+    tables:
+      - name: raw_tarifs_electricite
+        description: Lignes tarifaires tidy issues du parsing pdfplumber des grilles CRSE
+        columns:
+          - name: country_code
+            tests: [not_null]
+          - name: price_fcfa_kwh
+          - name: effective_date
+            tests: [not_null]
