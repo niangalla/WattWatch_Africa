@@ -42,6 +42,10 @@ aucun changement de code).
   Couches : staging (view) / silver (table) / gold (table). Source Bronze :
   `WATTWATCH.BRONZE.RAW_TARIFS_ELECTRICITE`.
 - `tests/` — pytest, fixtures sur la vraie grille SENELEC du 2026-01-01 (baisse de 10 %).
+- `infra/terraform/` — IaC AWS : bucket `wattwatch-raw` (versionné, privé) + utilisateur IAM
+  `wattwatch-pipeline` (policy limitée au bucket, `force_destroy = true`). Le tfstate est
+  gitignoré, le lock file versionné. La clé d'accès du pipeline est créée hors Terraform
+  (jamais dans le tfstate) → à régénérer après chaque destroy/recreate et reporter dans `.env`.
 
 ⚠️ Convention : les fichiers dbt utilisent l'extension **`.yml`** (jamais `.yaml`) —
 dbt ignore silencieusement `dbt_project.yaml`/`profiles.yaml` et les property files `.yaml`.
@@ -55,9 +59,13 @@ dbt ignore silencieusement `dbt_project.yaml`/`profiles.yaml` et les property fi
   compose), providers Airflow installés sous contraintes officielles,
   `SQLExecuteQueryOperator` remplace `SnowflakeOperator` déprécié. Stack validée le
   2026-07-20 : `dags test wattwatch_ingestion` OK de bout en bout (SENELEC → MinIO)
-- ⏳ Bloqué en attente de credentials : compte AWS S3 réel + compte Snowflake
-  (renseigner `.env`, cf. `.env.example` ; `AIRFLOW_CONN_SNOWFLAKE_WATTWATCH` active
-  les DAGs load et dbt)
+- ✅ Infra AWS en Terraform (2026-07-20) : compte AWS opérationnel (utilisateur admin
+  `alla-admin`, clé root supprimée), bucket `wattwatch-raw` + IAM `wattwatch-pipeline`
+  provisionnés via `infra/terraform/`. Ingestion validée sur le vrai S3 le même jour
+  (PDF dans `landing/crse/`, CSV tidy dans `processed/`)
+- ⏳ Bloqué en attente : compte Snowflake (renseigner `.env`, cf. `.env.example` ;
+  `AIRFLOW_CONN_SNOWFLAKE_WATTWATCH` active les DAGs load et dbt). Ensuite : storage
+  integration Snowflake↔S3 (à ajouter dans Terraform), DDL Bronze, COPY INTO
 
 ⚠️ Le Docker Engine natif dans WSL Ubuntu a été purgé le 2026-07-20 (disque C: plein) :
 images et cache supprimés, volumes conservés. Les stacks du projet tournent sous

@@ -7,6 +7,9 @@ __pycache__/
 
 # Secrets
 .env
+# CSV de clés téléchargés depuis la console AWS — ne doivent jamais entrer dans git
+*accessKeys*.csv
+*rootkey*.csv
 
 # Données brutes (la landing zone vit dans S3, pas dans git)
 data/landing/

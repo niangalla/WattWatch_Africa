@@ -21,7 +21,9 @@ Reis & Housley) :
 - **Serving** : Power BI
 - **Orchestration** : Apache Airflow · **CI/CD** : GitHub Actions
 
-## Statut — Phase 0 (POC) ✅
+## Statut
+
+### Phase 0 — POC ✅
 
 La preuve de bout en bout est faite sur la source principale :
 
@@ -32,6 +34,16 @@ La preuve de bout en bout est faite sur la source principale :
 3. **Parsing** — `pdf_parser.py` extrait de la grille SENELEC du 1er janvier 2026
    (celle de la baisse de 10 %) : tarifs BT par tranche, prépaiement Woyofal, MT/HT
    heures pointe/hors-pointe, primes fixes et bornes des tranches — en format *tidy*.
+
+### Phase 1 — Chargement 🚧
+
+- ✅ Stack Docker locale (Airflow + MinIO) opérationnelle, 3 DAGs en place
+- ✅ Infrastructure AWS provisionnée en **Terraform** (`infra/terraform/`) : bucket
+  `wattwatch-raw` (privé, versionné) + utilisateur IAM `wattwatch-pipeline` restreint
+  au seul bucket
+- ✅ Ingestion validée sur le vrai S3 (2026-07-20) : PDF CRSE dans `landing/crse/`,
+  CSV tidy dans `processed/`
+- ⏳ Snowflake : compte, storage integration S3 et `COPY INTO` Bronze (DAG `wattwatch_load`)
 
 ## Démarrage rapide
 
@@ -53,6 +65,26 @@ pytest
 Pour pousser la landing zone vers S3, définir dans `.env` (voir `.env.example`) :
 `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `WATTWATCH_S3_BUCKET` — le spider écrit alors
 directement `FILES_STORE=s3://…`.
+
+## Infrastructure AWS (Terraform)
+
+La landing zone de production est décrite en IaC dans `infra/terraform/` : bucket
+`wattwatch-raw` (versioning activé, accès public bloqué) et utilisateur IAM
+`wattwatch-pipeline` dont la politique se limite à lire/écrire ce bucket.
+
+```bash
+cd infra/terraform
+terraform init      # télécharge le provider AWS (une seule fois)
+terraform plan      # aperçu des changements — ne touche à rien
+terraform apply     # crée/met à jour l'infra
+terraform destroy   # supprime tout (reproductible : apply recrée à l'identique)
+```
+
+Conventions : le tfstate n'est jamais commité (il peut contenir des secrets), le
+`.terraform.lock.hcl` l'est (il fige la version du provider). La clé d'accès du
+pipeline est créée hors Terraform (`aws iam create-access-key --user-name
+wattwatch-pipeline`) pour ne pas finir en clair dans l'état — à régénérer après
+chaque destroy/recreate, puis à reporter dans `.env`.
 
 ## Tester le pipeline complet avec Docker
 
@@ -93,6 +125,7 @@ wattwatch-africa/
 ├── scrapers/          # Spiders Scrapy + parseur PDF (package Scrapy)
 ├── dags/              # DAGs Airflow : ingestion → chargement → dbt
 ├── dbt/               # Modèles Bronze/Silver/Gold + tests
+├── infra/terraform/   # IaC AWS : bucket S3 landing + IAM pipeline
 ├── tests/             # pytest (fixtures : vraie grille SENELEC 2026)
 ├── data/              # landing/ (brut, non versionné) et processed/
 ├── .github/workflows/ # CI : lint + tests Python, dbt parse

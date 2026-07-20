@@ -1,0 +1,18 @@
+# État Terraform : contient les attributs réels des ressources (parfois des
+# secrets) — ne jamais committer.
+*.tfstate
+*.tfstate.*
+
+# Répertoire de travail local (providers téléchargés, ~600 Mo pour AWS)
+.terraform/
+
+# Valeurs locales de variables (peuvent contenir des infos propres au poste)
+*.tfvars
+
+# Logs de crash
+crash.log
+crash.*.log
+
+# Le lock file, lui, DOIT être versionné (comme un package-lock.json) :
+# il fige la version exacte du provider.
+!.terraform.lock.hcl
