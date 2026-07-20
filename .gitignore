@@ -12,7 +12,8 @@ __pycache__/
 data/landing/
 data/processed/
 
-# dbt
+# dbt (profiles.example.yml est la référence versionnée)
+dbt/profiles.yml
 dbt/target/
 dbt/dbt_packages/
 dbt/logs/
@@ -26,3 +27,4 @@ logs/
 .idea/
 Thumbs.db
 .DS_Store
+.venv_wsl/

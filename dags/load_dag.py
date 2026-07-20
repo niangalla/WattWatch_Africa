@@ -7,7 +7,7 @@ Phase 1 : squelette. Pattern ELT strict — le chargement est fait ici
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.providers.snowflake.operators.snowflake import SnowflakeOperator
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 
 default_args = {
     "owner": "wattwatch",
@@ -32,8 +32,8 @@ with DAG(
     default_args=default_args,
     tags=["wattwatch", "load"],
 ) as dag:
-    copy_tarifs = SnowflakeOperator(
+    copy_tarifs = SQLExecuteQueryOperator(
         task_id="copy_into_bronze_tarifs",
-        snowflake_conn_id="snowflake_wattwatch",
+        conn_id="snowflake_wattwatch",
         sql=COPY_TARIFS,
     )

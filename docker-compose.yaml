@@ -12,19 +12,11 @@ name: wattwatch
 x-airflow-common: &airflow-common
   build: .
   image: wattwatch-airflow:latest
+  env_file: .env                       
   environment: &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CORE__DAGS_FOLDER: /opt/wattwatch/dags
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-    # Landing zone : MinIO émule S3 (mêmes réglages que le vrai S3, seul l'endpoint change)
-    WATTWATCH_S3_BUCKET: wattwatch
-    AWS_ACCESS_KEY_ID: minioadmin
-    AWS_SECRET_ACCESS_KEY: minioadmin
-    AWS_DEFAULT_REGION: us-east-1
-    AWS_ENDPOINT_URL: http://minio:9000
-    # Snowflake (vide tant que le compte n'est pas créé — cf. .env.example)
-    AIRFLOW_CONN_SNOWFLAKE_WATTWATCH: ${AIRFLOW_CONN_SNOWFLAKE_WATTWATCH:-}
   volumes:
     - .:/opt/wattwatch
     - airflow-logs:/opt/airflow/logs
@@ -37,23 +29,18 @@ x-airflow-common: &airflow-common
 services:
   postgres:
     image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
+    env_file: .env
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "airflow"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
       retries: 10
     volumes:
       - postgres-db:/var/lib/postgresql/data
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2024-01-28T22-35-53Z
     command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+    env_file: .env
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -71,19 +58,21 @@ services:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      mc alias set local http://minio:9000 minioadmin minioadmin &&
-      mc mb --ignore-existing local/wattwatch
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
+      mc mb --ignore-existing local/${WATTWATCH_S3_BUCKET}
       "
 
   airflow-init:
     <<: *airflow-common
     command: >
-      bash -c "
-      airflow db migrate &&
-      airflow users create --username admin --password admin
-      --firstname Admin --lastname WattWatch --role Admin
-      --email admin@wattwatch.local || true
-      "
+      bash -c "airflow db migrate &&
+      airflow users create
+      --username ${AIRFLOW_ADMIN_USERNAME}
+      --password ${AIRFLOW_ADMIN_PASSWORD}
+      --firstname ${AIRFLOW_ADMIN_FIRSTNAME}
+      --lastname ${AIRFLOW_ADMIN_LASTNAME}
+      --role ${AIRFLOW_ADMIN_ROLE}
+      --email ${AIRFLOW_ADMIN_EMAIL}"
 
   airflow-webserver:
     <<: *airflow-common

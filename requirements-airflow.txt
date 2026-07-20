@@ -6,7 +6,4 @@ pdfplumber>=0.11
 boto3>=1.34
 python-dotenv>=1.0
 
-apache-airflow-providers-amazon
-apache-airflow-providers-snowflake
-
 dbt-snowflake>=1.9
