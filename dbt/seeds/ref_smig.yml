@@ -1,0 +1,15 @@
+version: 2
+
+seeds:
+  - name: ref_smig
+    description: >
+      Salaire minimum interprofessionnel garanti (SMIG), taux horaire officiel.
+      Donnee de reference statique (revalorisee par decret, pas par scraping).
+    columns:
+      - name: country_code
+        tests: [not_null]
+      - name: smig_fcfa_heure
+        description: Taux horaire brut en FCFA, base legale 40h/semaine.
+        tests: [not_null]
+      - name: effective_date
+        tests: [not_null]
