@@ -1,25 +1,31 @@
 # WattWatch Africa
 
-Observatoire de l'affordabilité énergétique en Afrique de l'Ouest.
+Pipeline de données qui collecte les grilles tarifaires électriques d'Afrique de l'Ouest, les normalise et calcule des indicateurs d'affordabilité énergétique (coût par tranche, part du revenu des ménages, écart prépaiement/post-paiement, comparaison régionale).
 
-## Le sujet
-
-Au Sénégal, le prix de l'électricité change régulièrement par décision du régulateur (la CRSE), mais ces changements sont difficiles à suivre dans la durée : les grilles tarifaires sortent en PDF, sans API ni historique exploitable, et personne ne les croise vraiment avec les revenus des ménages ou le taux d'accès à l'électricité. Ce projet part de ce constat : collecter ces grilles au fil du temps, les normaliser, et en tirer des indicateurs qui répondent à des questions concrètes. Une hausse de tarif représente combien d'heures de SMIG en plus ? Le prépaiement Woyofal coûte-t-il vraiment plus cher que le post-paiement ? Comment le Sénégal se compare-t-il à ses voisins une fois les prix ramenés en dollars PPA ?
-
-C'est un projet personnel, construit comme un vrai pipeline de données de bout en bout plutôt qu'un notebook d'analyse ponctuelle : ingestion automatisée, stockage versionné, transformation testée, indicateurs reproductibles.
+Point de départ : au Sénégal, les grilles tarifaires sont publiées par le régulateur (CRSE) en PDF, sans API ni historique structuré, et ne sont jamais croisées avec le revenu des ménages ou le taux d'accès à l'électricité. Ce projet construit ce suivi de bout en bout plutôt que par des analyses ponctuelles : ingestion automatisée, stockage historisé, transformation testée, indicateurs reproductibles.
 
 ## Architecture
 
-Flux ELT en 4 étapes, avec les undercurrents habituels (sécurité, orchestration, qualité, observabilité, FinOps) en toile de fond. Le modèle suit *Fundamentals of Data Engineering* (Reis & Housley).
-
 ![Architecture_Watt_Watch_Africa](docs/Architecture_WattWatch_Africa_V0.png)
 
-- **Ingestion** : Scrapy (API REST WordPress de crse.sn, pages HTML) et pdfplumber pour les grilles tarifaires PDF
-- **Landing zone** : AWS S3, dépôt brut des fichiers scrapés
-- **Chargement** : `COPY INTO` orchestré par Airflow, S3 vers Snowflake (Bronze)
-- **Transformation** : dbt, exécuté entièrement dans Snowflake (Bronze, Silver, Gold)
-- **Serving** : Power BI
-- **Orchestration** : Apache Airflow, **CI/CD** : GitHub Actions
+| Étape | Outil | Rôle |
+|---|---|---|
+| Ingestion | Scrapy + pdfplumber | Récupère les PDF CRSE (API REST WordPress), en extrait des lignes tarifaires tidy |
+| Landing | AWS S3 | Dépôt brut, versionné |
+| Chargement | Airflow (`COPY INTO`) | S3 vers Snowflake Bronze, aucune transformation |
+| Transformation | dbt | Bronze vers Silver (typage, nettoyage) vers Gold (indicateurs), testé à chaque run |
+| Serving | Power BI | Restitution |
+| CI/CD | GitHub Actions | Lint, tests Python, dbt parse |
+
+### Choix de conception
+
+L'architecture suit le modèle décrit dans *Fundamentals of Data Engineering* (Reis & Housley, O'Reilly), notamment sur trois points :
+
+- **ELT plutôt qu'ETL.** Les données brutes sont chargées telles quelles dans l'entrepôt, la transformation vient après. Avec le calcul cloud à faible coût, transformer en aval donne du SQL versionné et testable (dbt), rejouable sans re-solliciter la source. `dbt ne charge jamais de données` : le chargement (EL) et la transformation (T) sont deux responsabilités distinctes, séparées dans le pipeline (Airflow fait le `COPY INTO`, dbt ne fait que du SQL sur des tables déjà peuplées).
+- **Architecture en couches (Bronze/Silver/Gold).** Bronze garde une copie brute et immuable des données ingérées, ce qui permet de rejouer les transformations sans revenir à la source. Silver type et nettoie. Gold calcule les indicateurs métier consommés directement par Power BI.
+- **Infrastructure en code.** Bucket S3, IAM, storage integration Snowflake : tout est déclaré en Terraform, rien n'est configuré à la main dans les consoles (détails plus bas).
+
+Le choix d'Airflow comme orchestrateur (plutôt que Prefect ou Dagster) tient à la maturité de l'écosystème et aux providers officiels Snowflake/AWS, largement suffisants pour la volumétrie du projet.
 
 ## Statut
 
