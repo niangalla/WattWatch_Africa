@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: cout_unitaire_kwh
+    description: Cout unitaire par kWh et par tranche, grain Silver expose tel quel pour le serving.
+    columns:
+      - name: tariff_id
+        tests: [not_null, unique]
+      - name: price_fcfa_kwh
+        tests:
+          - not_null:
+              config:
+                where: "band != 'tranche_3'"
+
+  - name: indice_progressivite_tarifaire
+    description: Rapport prix tranche_3 / prix tranche_1, une ligne par grille BT progressive.
+    columns:
+      - name: indice_progressivite
+        description: Nul quand la tranche_3 n'a pas de prix defini dans la grille source (cas du Woyofal).
+        tests:
+          - not_null:
+              config:
+                where: "prix_tranche_3 is not null"
+
+  - name: ecart_prepaiement
+    description: Difference de prix entre Woyofal (prepaiement) et post-paiement, a categorie et tranche identiques.
+    columns:
+      - name: ecart_fcfa_kwh
+        description: Nul quand la tranche_3 n'a pas de prix Woyofal defini dans la grille source.
+        tests:
+          - not_null:
+              config:
+                where: "band != 'tranche_3'"
+
+  - name: evolution_temporelle
+    description: Prix indexe base 100 sur la premiere grille observee par ligne tarifaire.
+    columns:
+      - name: indice_base_100
+        description: Nul quand price_fcfa_kwh n'est pas defini (tranche_3 du Woyofal).
+        tests:
+          - not_null:
+              config:
+                where: "price_fcfa_kwh is not null"

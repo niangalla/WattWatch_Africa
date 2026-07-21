@@ -46,6 +46,12 @@ La preuve de bout en bout est faite sur la source principale.
 - [x] Storage integration Snowflake-S3 en Terraform (`infra/terraform/snowflake.tf`) : un rôle IAM assumé via STS, aucune clé d'accès échangée. Stage externe `WATTWATCH.BRONZE.LANDING_STAGE` créé (`infra/snowflake/02_stage.sql`)
 - [x] `COPY INTO` validé : le DAG `wattwatch_load` charge les CSV tidy de S3 dans `WATTWATCH.BRONZE.RAW_TARIFS_ELECTRICITE`
 
+### Phase 2, Transformation : en cours
+
+- [x] Silver : table `tarifs_electricite`, typée et testée (unicité, valeurs acceptées, non-nullité)
+- [x] Gold : coût unitaire par kWh/tranche, indice de progressivité tarifaire, écart Woyofal vs post-paiement, indice d'évolution temporelle base 100. 15 tests dbt, tous verts
+- [ ] Indicateurs nécessitant une source externe (part du revenu des ménages, équivalent SMIG, USD PPA, croisement taux d'accès World Bank) : à faire une fois ces données ingérées
+
 ## Démarrage rapide
 
 ```bash
@@ -122,16 +128,16 @@ wattwatch-africa/
 └── docs/
 ```
 
-## Indicateurs d'affordabilité (couche Gold, Phase 2)
+## Indicateurs d'affordabilité (couche Gold)
 
-- Coût unitaire par kWh et par tranche
-- Part du revenu des ménages pour un panier électrique de base (seuil ESMAP autour de 5 à 10 %)
-- Équivalent en kWh du salaire minimum (SMIG)
-- Indice de progressivité tarifaire (1ère tranche vs suivantes)
-- Écart prépaiement (Woyofal) vs post-paiement
-- Prix normalisé en USD PPP (comparaison inter-pays)
-- Indice d'évolution temporelle (base 100), pour capter la baisse de 10 % du 1er janvier 2026
-- Croisement prix / taux d'accès à l'électricité (World Bank `EG.ELC.ACCS.ZS`)
+- [x] Coût unitaire par kWh et par tranche (`cout_unitaire_kwh`)
+- [x] Indice de progressivité tarifaire, 1ère tranche vs dernière (`indice_progressivite_tarifaire`)
+- [x] Écart prépaiement (Woyofal) vs post-paiement (`ecart_prepaiement`)
+- [x] Indice d'évolution temporelle, base 100 (`evolution_temporelle`), un seul point tant qu'une seule grille est ingérée
+- [ ] Part du revenu des ménages pour un panier électrique de base (seuil ESMAP autour de 5 à 10 %), attend une source de revenu des ménages
+- [ ] Équivalent en kWh du salaire minimum (SMIG), attend une constante de référence (seed dbt)
+- [ ] Prix normalisé en USD PPP (comparaison inter-pays), attend un taux de conversion PPA
+- [ ] Croisement prix / taux d'accès à l'électricité, attend l'API World Bank (`EG.ELC.ACCS.ZS`)
 
 ## Sources de données
 

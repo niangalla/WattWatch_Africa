@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: tarifs_electricite
+    description: Table canonique des lignes tarifaires electriques, une ligne par tranche/tarif.
+    columns:
+      - name: tariff_id
+        description: Cle de substitution (country_code|utility|effective_date|category_code|payment_mode|band)
+        tests: [not_null, unique]
+      - name: country_code
+        tests: [not_null]
+      - name: effective_date
+        tests: [not_null]
+      - name: payment_mode
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["prepaiement", "postpaiement"]
+      - name: voltage_level
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["BT", "MT", "HT"]
+      - name: price_fcfa_kwh
+        description: Nul pour certaines lignes tranche_3 (tranche ouverte, sans prix unitaire dans la grille source).
+        tests:
+          - not_null:
+              config:
+                where: "band != 'tranche_3'"
