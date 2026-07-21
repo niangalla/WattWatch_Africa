@@ -134,8 +134,8 @@ wattwatch-africa/
 - [x] Indice de progressivité tarifaire, 1ère tranche vs dernière (`indice_progressivite_tarifaire`)
 - [x] Écart prépaiement (Woyofal) vs post-paiement (`ecart_prepaiement`)
 - [x] Indice d'évolution temporelle, base 100 (`evolution_temporelle`), un seul point tant qu'une seule grille est ingérée
+- [x] Équivalent en kWh du salaire minimum (`equivalent_smig_kwh`), SMIG horaire sourcé du décret n° 2023-1710 (seed `ref_smig`)
 - [ ] Part du revenu des ménages pour un panier électrique de base (seuil ESMAP autour de 5 à 10 %), attend une source de revenu des ménages
-- [ ] Équivalent en kWh du salaire minimum (SMIG), attend une constante de référence (seed dbt)
 - [ ] Prix normalisé en USD PPP (comparaison inter-pays), attend un taux de conversion PPA
 - [ ] Croisement prix / taux d'accès à l'électricité, attend l'API World Bank (`EG.ELC.ACCS.ZS`)
 

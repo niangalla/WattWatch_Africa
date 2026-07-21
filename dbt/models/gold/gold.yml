@@ -32,6 +32,16 @@ models:
               config:
                 where: "band != 'tranche_3'"
 
+  - name: equivalent_smig_kwh
+    description: Nombre de kWh que le SMIG mensuel permet d'acheter, par ligne tarifaire.
+    columns:
+      - name: kwh_equivalent_smig
+        description: Nul quand la tranche_3 n'a pas de prix defini dans la grille source.
+        tests:
+          - not_null:
+              config:
+                where: "band != 'tranche_3'"
+
   - name: evolution_temporelle
     description: Prix indexe base 100 sur la premiere grille observee par ligne tarifaire.
     columns:
