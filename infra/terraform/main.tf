@@ -57,6 +57,12 @@ resource "aws_iam_user" "pipeline" {
   # AWS refuse de supprimer un utilisateur qui a encore des clés et le
   # destroy échoue (DeleteConflict 409).
   force_destroy = true
+
+  # Traçabilité de la clé d'accès en cours (créée hors Terraform, cf. ci-dessus).
+  # À régénérer après chaque destroy/recreate de l'utilisateur.
+  tags = {
+    "AKIA37P63XOIKUKDEGSR" = "for_wattwatch_pipeline"
+  }
 }
 
 data "aws_iam_policy_document" "pipeline_s3" {

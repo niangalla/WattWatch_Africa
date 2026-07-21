@@ -14,3 +14,8 @@ output "pipeline_user" {
   description = "Utilisateur IAM dont il faut générer la clé d'accès pour .env"
   value       = aws_iam_user.pipeline.name
 }
+
+output "snowflake_storage_integration_name" {
+  description = "À utiliser dans le CREATE STAGE (infra/snowflake/02_stage.sql)"
+  value       = snowflake_storage_integration_aws.wattwatch.name
+}

@@ -42,15 +42,26 @@ aucun changement de code).
   Couches : staging (view) / silver (table) / gold (table). Source Bronze :
   `WATTWATCH.BRONZE.RAW_TARIFS_ELECTRICITE`.
 - `tests/` — pytest, fixtures sur la vraie grille SENELEC du 2026-01-01 (baisse de 10 %).
-- `infra/terraform/` — IaC AWS : bucket `wattwatch-raw` (versionné, privé) + utilisateur IAM
-  `wattwatch-pipeline` (policy limitée au bucket, `force_destroy = true`). Le tfstate est
-  gitignoré, le lock file versionné. La clé d'accès du pipeline est créée hors Terraform
-  (jamais dans le tfstate) → à régénérer après chaque destroy/recreate et reporter dans `.env`.
+- `infra/terraform/` — IaC AWS + Snowflake (2 providers). AWS : bucket `wattwatch-raw`
+  (versionné, privé) + utilisateur IAM `wattwatch-pipeline` (policy limitée au bucket,
+  `force_destroy = true`). Snowflake : `snowflake_storage_integration_aws` (attention,
+  pas `snowflake_storage_integration` — déprécié) + rôle IAM `wattwatch-snowflake-integration`
+  assumé via STS (trust policy verrouillée sur `describe_output[0].iam_user_arn` +
+  `external_id`, pas de clé d'accès échangée). Provider Snowflake : source
+  `snowflakedb/snowflake` (a migré depuis `Snowflake-Labs/snowflake`), auth par
+  `$env:SNOWFLAKE_USER/PASSWORD/ROLE` (jamais dans les fichiers .tf). Le tfstate est
+  gitignoré, le lock file versionné. La clé d'accès du pipeline AWS est créée hors
+  Terraform (jamais dans le tfstate) → à régénérer après chaque destroy/recreate et
+  reporter dans `.env`.
+- `infra/snowflake/` — scripts SQL à exécuter à la main dans Snowsight (rôle
+  ACCOUNTADMIN) : `01_bootstrap.sql` (warehouse/base/schéma Bronze/rôle applicatif/table,
+  une fois le compte créé) et `02_stage.sql` (stage externe `LANDING_STAGE`, une fois la
+  storage integration provisionnée par Terraform).
 
 ⚠️ Convention : les fichiers dbt utilisent l'extension **`.yml`** (jamais `.yaml`) —
 dbt ignore silencieusement `dbt_project.yaml`/`profiles.yaml` et les property files `.yaml`.
 
-## État d'avancement (2026-07-20)
+## État d'avancement (2026-07-21)
 
 - ✅ Phase 0 (POC, commit `7cf4258`) : spider CRSE + parseur PDF opérationnels de bout en bout
 - ✅ Stack Docker locale (commit `f7e06ea`) : Airflow + MinIO, squelettes des 3 DAGs,
@@ -63,9 +74,16 @@ dbt ignore silencieusement `dbt_project.yaml`/`profiles.yaml` et les property fi
   `alla-admin`, clé root supprimée), bucket `wattwatch-raw` + IAM `wattwatch-pipeline`
   provisionnés via `infra/terraform/`. Ingestion validée sur le vrai S3 le même jour
   (PDF dans `landing/crse/`, CSV tidy dans `processed/`)
-- ⏳ Bloqué en attente : compte Snowflake (renseigner `.env`, cf. `.env.example` ;
-  `AIRFLOW_CONN_SNOWFLAKE_WATTWATCH` active les DAGs load et dbt). Ensuite : storage
-  integration Snowflake↔S3 (à ajouter dans Terraform), DDL Bronze, COPY INTO
+- ✅ Compte Snowflake (essai gratuit 1 mois, AWS eu-west-1) + bootstrap SQL
+  (`infra/snowflake/01_bootstrap.sql`) : warehouse `WATTWATCH_WH`, base `WATTWATCH`,
+  schéma `BRONZE`, rôle `WATTWATCH_TRANSFORM`, table `RAW_TARIFS_ELECTRICITE`
+- ✅ Storage integration Snowflake↔S3 en Terraform (2026-07-21, `snowflake.tf`) + stage
+  externe `LANDING_STAGE` (`infra/snowflake/02_stage.sql`) — accès en lecture par rôle
+  IAM assumé via STS, aucune clé d'accès échangée
+- ✅ **Phase 1 terminée** : DAG `wattwatch_load` validé (2026-07-21), `COPY INTO` charge
+  les CSV S3 dans `WATTWATCH.BRONZE.RAW_TARIFS_ELECTRICITE`
+- ⏳ Prochaine étape : DAG `wattwatch_dbt` (staging `stg_tarifs_electricite` déjà
+  scaffoldé), puis Phase 2 — modèles Silver/Gold et indicateurs d'affordabilité
 
 ⚠️ Le Docker Engine natif dans WSL Ubuntu a été purgé le 2026-07-20 (disque C: plein) :
 images et cache supprimés, volumes conservés. Les stacks du projet tournent sous

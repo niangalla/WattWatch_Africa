@@ -9,5 +9,9 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.0" # accepte 6.x, refuse 7.0 (breaking changes potentiels)
     }
+    snowflake = {
+      source  = "snowflakedb/snowflake" # anciennement Snowflake-Labs/snowflake
+      version = "~> 2.18"
+    }
   }
 }
