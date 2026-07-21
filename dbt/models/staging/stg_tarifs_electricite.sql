@@ -16,6 +16,6 @@ select
 from {{ source('bronze', 'raw_tarifs_electricite') }}
 qualify row_number() over (
     partition by country_code, utility, effective_date, voltage_level,
-                 category, payment_mode, band
+                 section, category, payment_mode, band
     order by parsed_at desc
 ) = 1

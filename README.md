@@ -4,6 +4,8 @@ Pipeline de données qui collecte les grilles tarifaires électriques d'Afrique 
 
 Point de départ : au Sénégal, les grilles tarifaires sont publiées par le régulateur (CRSE) en PDF, sans API ni historique structuré, et ne sont jamais croisées avec le revenu des ménages ou le taux d'accès à l'électricité. Ce projet construit ce suivi de bout en bout plutôt que par des analyses ponctuelles : ingestion automatisée, stockage historisé, transformation testée, indicateurs reproductibles.
 
+Cinq opérateurs couverts au Sénégal : SENELEC (réseau national) et les quatre concessions d'électrification rurale ERA, LLK, DPSL et SCL, chacune avec son propre format de grille tarifaire.
+
 ## Architecture
 
 ![Architecture_Watt_Watch_Africa](docs/Architecture_WattWatch_Africa_V0.png)
@@ -45,6 +47,7 @@ La preuve de bout en bout est faite sur la source principale.
 - [x] Compte Snowflake (essai gratuit, AWS eu-west-1) : warehouse, base, schéma Bronze, rôle applicatif provisionnés via `infra/snowflake/01_bootstrap.sql`
 - [x] Storage integration Snowflake-S3 en Terraform (`infra/terraform/snowflake.tf`) : un rôle IAM assumé via STS, aucune clé d'accès échangée. Stage externe `WATTWATCH.BRONZE.LANDING_STAGE` créé (`infra/snowflake/02_stage.sql`)
 - [x] `COPY INTO` validé : le DAG `wattwatch_load` charge les CSV tidy de S3 dans `WATTWATCH.BRONZE.RAW_TARIFS_ELECTRICITE`
+- [x] Parseur des grilles harmonisées de concessions rurales (ERA, LLK, DPSL, SCL) : format tableau par puissance souscrite (Service 1-4), distinct des tranches SENELEC. 105 lignes tarifaires en base sur 5 opérateurs
 
 ### Phase 2, Transformation : en cours
 

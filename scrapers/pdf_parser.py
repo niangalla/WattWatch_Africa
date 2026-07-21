@@ -225,6 +225,52 @@ def _parse_tranche_table(table):
     return records
 
 
+def _is_rural_concession(text):
+    """Grilles harmonisees des concessions rurales (ERA/LLK/DPSL/SCL) :
+    tableau large 'Service 1..4' par puissance souscrite, au lieu des
+    tranches de consommation SENELEC."""
+    key = _key(text)
+    return "tarifs harmonises" in key and "service 1" in key
+
+
+def _parse_rural_concession(text):
+    """Repere le prix par libelle de ligne plutot que par position de
+    colonne : pdfplumber extrait un nombre de colonnes different d'un
+    document a l'autre pour ce meme tableau (6, 11 ou 5 selon le PDF)."""
+    records = []
+    category = None
+    section = None
+    for raw_line in text.splitlines():
+        key = _key(raw_line)
+        if "usagers domestiques" in key:
+            category = "Domestique"
+        elif "usagers professionnels" in key:
+            category = "Professionnel"
+        elif "kit solaire" in key:
+            section = "Kit solaire"
+        elif "au reseau" in key:
+            section = "Reseau"
+        elif key.startswith("tarif harmonise du kwh"):
+            numbers = [
+                clean_number(n)
+                for n in re.findall(r"\d{1,3}(?:\s\d{3})*(?:,\d+)?", raw_line)
+            ]
+            for i, price in enumerate(numbers, start=1):
+                if price is None:
+                    continue
+                records.append({
+                    "voltage_level": "BT",
+                    "section": section,
+                    "category": category,
+                    "category_code": None,
+                    "payment_mode": "prepaiement",
+                    "band": f"service_{i}",
+                    "price_fcfa_kwh": price,
+                    "prime_fixe_fcfa_kw_month": None,
+                })
+    return records
+
+
 def _classify_table(table):
     flat = _key(" ".join(str(c) for row in table for c in row if c))
     if "option tarifaire" in flat:
@@ -244,8 +290,12 @@ def parse_grille(pdf_path, country_code="SN", utility="SENELEC"):
 
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
+            text = page.extract_text() or ""
             if effective_date is None:
-                effective_date = parse_effective_date(page.extract_text() or "")
+                effective_date = parse_effective_date(text)
+            if _is_rural_concession(text):
+                tariffs.extend(_parse_rural_concession(text))
+                continue
             for table in page.extract_tables():
                 kind = _classify_table(table)
                 if kind == "bt":
