@@ -124,13 +124,16 @@ def _parse_bt_table(table):
             continue
         section_key = _key(section or "")
 
-        if "grande puissance" in section_key:
+        if "eclairage" in _key(label):
+            # Meme section que Grande Puissance dans le PDF, mais sans
+            # distinction heures pointe/hors-pointe : tarif unique + prime
+            # fixe (les 2 valeurs ne sont pas [hors_pointe, pointe]).
+            bands = [("unique", numbers[0] if numbers else None)]
+            prime = numbers[1] if len(numbers) > 1 else None
+        elif "grande puissance" in section_key:
             # [hors pointe, pointe, prime fixe]
             bands = list(zip(["heures_hors_pointe", "heures_pointe"], numbers[:2], strict=False))
             prime = numbers[2] if len(numbers) > 2 else None
-        elif "eclairage" in _key(label):
-            bands = [("unique", numbers[0] if numbers else None)]
-            prime = numbers[1] if len(numbers) > 1 else None
         else:
             bands = list(zip(["tranche_1", "tranche_2", "tranche_3"], numbers[:3], strict=False))
             prime = numbers[3] if len(numbers) > 3 else None

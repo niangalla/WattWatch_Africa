@@ -1,0 +1,52 @@
+{
+  "name": "WattWatch Africa",
+  "dataColors": [
+    "#2a78d6",
+    "#008300",
+    "#e87ba4",
+    "#eda100",
+    "#1baf7a",
+    "#eb6834",
+    "#4a3aa7",
+    "#e34948"
+  ],
+  "background": "#fcfcfb",
+  "foreground": "#0b0b0b",
+  "tableAccent": "#2a78d6",
+  "good": "#0ca30c",
+  "neutral": "#898781",
+  "bad": "#d03b3b",
+  "maximum": "#0d366b",
+  "center": "#f0efec",
+  "minimum": "#cde2fb",
+  "textClasses": {
+    "callout": { "fontSize": 45, "fontFace": "Segoe UI", "color": "#0b0b0b" },
+    "title": { "fontSize": 14, "fontFace": "Segoe UI Semibold", "color": "#0b0b0b" },
+    "header": { "fontSize": 12, "fontFace": "Segoe UI Semibold", "color": "#52514e" },
+    "label": { "fontSize": 10, "fontFace": "Segoe UI", "color": "#52514e" }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [
+          { "show": true, "color": { "solid": { "color": "#fcfcfb" } }, "transparency": 0 }
+        ],
+        "border": [
+          { "show": true, "color": { "solid": { "color": "#e1e0d9" } }, "radius": 8 }
+        ],
+        "dropShadow": [
+          {
+            "show": true,
+            "color": { "solid": { "color": "#0b0b0b" } },
+            "transparency": 92,
+            "position": "Bottom Center",
+            "shadowBlur": 8,
+            "shadowDistance": 2,
+            "preset": "Custom"
+          }
+        ],
+        "outspacePane": [{ "backgroundColor": { "solid": { "color": "#f9f9f7" } } }]
+      }
+    }
+  }
+}
