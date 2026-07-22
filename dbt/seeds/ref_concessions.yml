@@ -1,0 +1,15 @@
+version: 2
+
+seeds:
+  - name: ref_concessions
+    description: >
+      Glossaire des concessions electriques (code -> zone geographique, operateur,
+      ville principale). Sert au dashboard Power BI (definitions affichees +
+      geocodage de la future carte) et documente les sigles ERA/LLK/DPSL/SCL,
+      qui ne sont pas des noms de societes mais des zones de concession.
+    columns:
+      - name: code
+        description: Correspond a la colonne `utility` des tables Gold.
+        tests: [not_null, unique]
+      - name: zone_complete
+        tests: [not_null]
