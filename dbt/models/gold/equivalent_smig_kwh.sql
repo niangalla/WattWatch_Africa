@@ -17,6 +17,7 @@ select
     t.country_code,
     t.utility,
     t.effective_date,
+    t.section,
     t.category,
     t.payment_mode,
     t.band,

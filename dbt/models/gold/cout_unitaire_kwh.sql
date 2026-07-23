@@ -6,6 +6,7 @@ select
     utility,
     effective_date,
     voltage_level,
+    section,
     category,
     category_code,
     payment_mode,
