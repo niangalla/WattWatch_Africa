@@ -15,6 +15,14 @@ select
     voltage_level,
     section,
     category,
+    -- Normalise les libelles de categorie (differents entre SENELEC et les
+    -- concessions rurales) pour permettre des comparaisons Domestique vs
+    -- Professionnel entre operateurs.
+    case
+        when category ilike '%domestique%' then 'Domestique'
+        when category ilike '%professionnel%' then 'Professionnel'
+        else 'Autre'
+    end as type_client,
     category_code,
     payment_mode,
     band,

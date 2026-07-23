@@ -8,6 +8,7 @@ select
     voltage_level,
     section,
     category,
+    type_client,
     category_code,
     payment_mode,
     band,

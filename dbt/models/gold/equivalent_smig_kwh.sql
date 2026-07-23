@@ -19,6 +19,7 @@ select
     t.effective_date,
     t.section,
     t.category,
+    t.type_client,
     t.payment_mode,
     t.band,
     t.price_fcfa_kwh,
